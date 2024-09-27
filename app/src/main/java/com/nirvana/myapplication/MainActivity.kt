@@ -2,6 +2,7 @@ package com.nirvana.myapplication
 
 import android.app.Activity
 import android.content.Intent
+import android.content.IntentFilter
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -20,6 +21,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -50,16 +52,18 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+
 @Composable
 fun MainScreen() {
     val context = LocalContext.current
 
-    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
-        if(result.resultCode == Activity.RESULT_OK) {
-            val data = result.data
-            Toast.makeText(context, data?.getStringExtra("info"), Toast.LENGTH_LONG).show()
+    val launcher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data = result.data
+                Toast.makeText(context, data?.getStringExtra("info"), Toast.LENGTH_LONG).show()
+            }
         }
-    }
     Row() {
         Button(onClick = {
             val intent = Intent(context, SecondActivity::class.java)
@@ -95,6 +99,30 @@ fun MainScreen() {
                 .size(200.dp)
                 .padding(8.dp)
         )
+    }
+
+
+    RegisterSystemBroadcastReceiver()
+    Button(onClick = {
+        val intent = Intent(context, ExplicitBroadcastReceiver::class.java).apply {
+            putExtra("info", "THis is from broadcast")
+        }
+        context.sendBroadcast(intent)
+    }) {
+        Text("Send Explicit Broadcast")
+    }
+}
+
+@Composable
+fun RegisterSystemBroadcastReceiver() {
+    val context = LocalContext.current
+    DisposableEffect(Unit) {
+        val batteryStatusReceiver = SystemBroadcastReceiver()
+        val intentFilter = IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED)
+        context.registerReceiver(batteryStatusReceiver, intentFilter)
+        onDispose {
+            context.unregisterReceiver(batteryStatusReceiver)
+        }
     }
 }
 
